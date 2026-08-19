@@ -33,13 +33,27 @@ const { Pool } = require('pg');
 // -------------------------------------------------------------------------
 // 1) DATABASE ULANISHI
 // -------------------------------------------------------------------------
-// Railway'da bu qiymat avtomatik DATABASE_URL muhit o'zgaruvchisi orqali
-// beriladi. Lokal ishga tushirish uchun quyidagi RAILWAY_DEFAULT_DB_URL
-// zaxira (fallback) sifatida ishlatiladi.
-const RAILWAY_DEFAULT_DB_URL =
-  'postgresql://postgres:hFKZGTveAwAirkHKVFTkrjfTFYJjtAUn@postgres.railway.internal:5432/railway';
+// Railway'da bu qiymat DATABASE_URL muhit o'zgaruvchisi orqali beriladi.
+// MUHIM: endi hech qanday hardcoded (kodga yozib qo'yilgan) fallback yo'q —
+// agar DATABASE_URL o'rnatilmagan bo'lsa, server buni ANIQ xato bilan
+// darhol xabar qiladi, shunda "ENOTFOUND postgres.railway.internal" kabi
+// chalkash xatolar o'rniga sabab ochiq-oydin ko'rinadi.
+const DATABASE_URL = process.env.DATABASE_URL;
 
-const DATABASE_URL = process.env.DATABASE_URL || RAILWAY_DEFAULT_DB_URL;
+// --- DEBUG: qaysi muhit o'zgaruvchilari mavjudligini (parolsiz) ko'rsatish ---
+console.log('[debug] process.env.DATABASE_URL mavjudmi?', !!process.env.DATABASE_URL);
+console.log('[debug] Barcha env kalitlari (nomlari, qiymatlarisiz):',
+  Object.keys(process.env).filter((k) => /DATABASE|PG|POSTGRES/i.test(k)));
+
+if (!DATABASE_URL) {
+  console.error('=============================================================');
+  console.error('[server] XATO: DATABASE_URL muhit o\'zgaruvchisi topilmadi!');
+  console.error('[server] Railway -> Servisingiz -> Variables bo\'limiga o\'ting');
+  console.error('[server] va DATABASE_URL ni Postgres servisidan REFERENCE qiling');
+  console.error('[server] (masalan: ${{Postgres.DATABASE_URL}}), qo\'lda yozmang.');
+  console.error('=============================================================');
+  process.exit(1);
+}
 
 const pool = new Pool({
   connectionString: DATABASE_URL,
@@ -316,7 +330,7 @@ async function start() {
     await seedIfEmpty();
     app.listen(PORT, () => {
       console.log(`[server] Gold Restaurant backend ${PORT}-portda ishlamoqda`);
-      console.log(`[server] DB host: ${DATABASE_URL.replace(/:\/\/.*@/, '://***@')}`);
+      console.log(`[server] DB manzili: ${DATABASE_URL.replace(/:\/\/.*@/, '://***:***@')}`);
     });
   } catch (err) {
     console.error('[server] Ishga tushirishda xato:', err);
