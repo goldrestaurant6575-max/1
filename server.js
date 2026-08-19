@@ -44,6 +44,12 @@ const DATABASE_URL = process.env.DATABASE_URL;
 console.log('[debug] process.env.DATABASE_URL mavjudmi?', !!process.env.DATABASE_URL);
 console.log('[debug] Barcha env kalitlari (nomlari, qiymatlarisiz):',
   Object.keys(process.env).filter((k) => /DATABASE|PG|POSTGRES/i.test(k)));
+try {
+  const u = new URL(process.env.DATABASE_URL || '');
+  console.log('[debug] DATABASE_URL HOST:', u.hostname, '| PORT:', u.port, '| DB:', u.pathname);
+} catch (e) {
+  console.log('[debug] DATABASE_URL formatini tahlil qilib bo\'lmadi:', e.message);
+}
 
 if (!DATABASE_URL) {
   console.error('=============================================================');
